@@ -1,0 +1,99 @@
+PARSER_BEGIN(AnalizadorLexico)
+
+public class AnalizadorLexico {
+    public static void main(String[] args) throws ParseException {
+        System.out.println("=== Iniciando Análisis Léxico ===");
+        AnalizadorLexicoTokenManager manager = new AnalizadorLexicoTokenManager(
+            new SimpleCharStream(System.in)
+        );
+        Token token;
+        while ((token = manager.getNextToken()).kind != AnalizadorLexicoConstants.EOF) {
+            System.out.println(
+                "Token: <" + token.image + "> \tTipo: " + AnalizadorLexicoConstants.tokenImage[token.kind]
+            );
+        }
+        System.out.println("=== Fin del análisis ===");
+    }
+}
+
+PARSER_END(AnalizadorLexico)
+
+SKIP :
+{
+    // Ignorar espacios en blanco, saltos de línea y tabulaciones
+    " " | "\t" | "\r" | "\n"
+}
+
+// ------------------------------
+// COMENTARIOS
+// ------------------------------
+SKIP :
+{
+    < "//" (~["\n", "\r"])* ("\n" | "\r" | "\r\n") >
+|   < "/*" (~["*"])* ("*" (~["/"] (~["*"])* ) )* "*" "/" >
+}
+
+// ------------------------------
+// PALABRAS RESERVADAS (puedes modificarlas)
+// ------------------------------
+TOKEN :
+{
+    < IF: "if" >
+|   < ELSE: "else" >
+|   < WHILE: "while" >
+|   < FOR: "for" >
+|   < FUNCTION: "function" >
+|   < RETURN: "return" >
+|   < ECHO: "echo" >
+|   < TRUE: "true" >
+|   < FALSE: "false" >
+|   < NULL: "null" >
+}
+
+// ------------------------------
+// IDENTIFICADORES Y LITERALES
+// ------------------------------
+TOKEN :
+{
+    < IDENTIFIER: ("$")? (["a"-"z","A"-"Z","_"]) (["a"-"z","A"-"Z","0"-"9","_"])* >
+|   < INTEGER_LITERAL: (["0"-"9"])+ >
+|   < FLOAT_LITERAL: (["0"-"9"])+ "." (["0"-"9"])+ >
+|   < STRING_LITERAL: "\"" (~["\"","\\"] | ("\\" .))* "\"" >
+}
+
+// ------------------------------
+// OPERADORES Y SIMBOLOS
+// ------------------------------
+TOKEN :
+{
+    < PLUS: "+" >
+|   < MINUS: "-" >
+|   < MULT: "*" >
+|   < DIV: "/" >
+|   < MOD: "%" >
+|   < ASSIGN: "=" >
+|   < EQ: "==" >
+|   < NEQ: "!=" >
+|   < LT: "<" >
+|   < GT: ">" >
+|   < LE: "<=" >
+|   < GE: ">=" >
+|   < AND: "&&" >
+|   < OR: "||" >
+|   < NOT: "!" >
+|   < LPAREN: "(" >
+|   < RPAREN: ")" >
+|   < LBRACE: "{" >
+|   < RBRACE: "}" >
+|   < SEMICOLON: ";" >
+|   < COMMA: "," >
+|   < DOT: "." >
+}
+
+// ------------------------------
+// FIN DE ARCHIVO
+// ------------------------------
+TOKEN :
+{
+    < EOF >
+}
