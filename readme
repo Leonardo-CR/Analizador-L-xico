@@ -1,0 +1,60 @@
+Estructura del proyecto:
+
+/ProyectoAnalizador/
+│
+├── javacc.jar
+├── AnalizadorLexico.jj
+└── (luego se generarán varios .java)
+
+
+Pasos:
+
+1ro ejecutar
+
+java -cp javacc.jar javacc AnalizadorLexico.jj
+
+Con esto compilaremos el archivo .jj
+
+2do Compilar los archivos java generados con el comando:
+
+javac *.java
+
+3ro Ejecutar el analizador léxico con el comando:
+
+java AnalizadorLexico
+
+4to El programa esperará que escribas código de entrada, ejemplo:
+
+$x = 10;
+if ($x > 5) {
+    echo "Hola mundo";
+}
+
+Cuando termines de escribir el codigo presiona:
+
+Ctrl + Z en Windows
+
+Ctrl + D en Linux o macOS
+
+Y veras una salida como esta: 
+
+=== Iniciando Análisis Léxico ===
+Token: <$x>       Tipo: <IDENTIFIER>
+Token: <=>        Tipo: <ASSIGN>
+Token: <10>       Tipo: <INTEGER_LITERAL>
+Token: <;>        Tipo: <SEMICOLON>
+Token: <if>       Tipo: <IF>
+...
+=== Fin del análisis ===
+
+EXTRA:
+
+Redirigir desde un archivo
+
+Si tienes código fuente en un archivo, por ejemplo codigo.txt, puedes ejecutar así:
+
+java AnalizadorLexico < codigo.txt
+
+Asi no es necesario tener que escribir el codigo desde la consola.
+
+:)
