@@ -1,26 +1,28 @@
 PARSER_BEGIN(AnalizadorLexico)
 
 public class AnalizadorLexico {
-    public static void main(String[] args) throws ParseException {
-        System.out.println("=== Iniciando Análisis Léxico ===");
-        AnalizadorLexicoTokenManager manager = new AnalizadorLexicoTokenManager(
-            new SimpleCharStream(System.in)
-        );
-        Token token;
-        while ((token = manager.getNextToken()).kind != AnalizadorLexicoConstants.EOF) {
-            System.out.println(
-                "Token: <" + token.image + "> \tTipo: " + AnalizadorLexicoConstants.tokenImage[token.kind]
-            );
+    public static void main(String[] args) throws ParseException, java.io.FileNotFoundException {
+        System.out.println("=== Iniciando Análisis Sintáctico ===");
+
+        java.io.InputStream input;
+        if (args.length > 0) {
+            input = new java.io.FileInputStream(args[0]); // leer desde archivo
+        } else {
+            input = System.in; // leer desde consola
         }
-        System.out.println("=== Fin del análisis ===");
+
+        AnalizadorLexico parser = new AnalizadorLexico(input);
+        parser.Programa(); // regla inicial del parser
+
+        System.out.println("=== Análisis completado sin errores ===");
     }
 }
 
 PARSER_END(AnalizadorLexico)
 
-// ------------------------------
+// ==========================================================
 // ESPACIOS Y COMENTARIOS
-// ------------------------------
+// ==========================================================
 SKIP :
 {
     " " | "\t" | "\r" | "\n"
@@ -30,11 +32,13 @@ SKIP :
 {
     < "//" (~["\n", "\r"])* ("\n" | "\r" | "\r\n") >
 |   < "/*" (~["*"])* ("*" (~["/"] (~["*"])* ) )* "*" "/" >
+|   < "#" (~["\n", "\r"])* ("\n" | "\r" | "\r\n") > // estilo PHP
 }
 
-// ------------------------------
+
+// ==========================================================
 // PALABRAS RESERVADAS
-// ------------------------------
+// ==========================================================
 TOKEN :
 {
     < IF: "if" >
@@ -47,44 +51,195 @@ TOKEN :
 |   < TRUE: "true" >
 |   < FALSE: "false" >
 |   < NULL: "null" >
+|   < BREAK: "break" >
+|   < CONTINUE: "continue" >
+|   < SWITCH: "switch" >
+|   < CASE: "case" >
+|   < DEFAULT_KW : "default" >
+|   < VAR: "var" >
+|   < CONST: "const" >
+|   < CLASS: "class" >
+|   < NEW: "new" >
+|   < THIS: "this" >
+|   < EXTENDS: "extends" >
+|   < PUBLIC: "public" >
+|   < PRIVATE: "private" >
+|   < PROTECTED: "protected" >
+|   < STATIC: "static" >
+|   < TRY: "try" >
+|   < CATCH: "catch" >
+|   < FINALLY: "finally" >
+|   < THROW: "throw" >
+|   < INTERFACE: "interface" >
+|   < IMPLEMENTS: "implements" >
 }
 
-// ------------------------------
+
+// ==========================================================
 // IDENTIFICADORES Y LITERALES
-// ------------------------------
+// ==========================================================
 TOKEN :
 {
+    // Identificadores (permiten $ para estilo PHP)
     < IDENTIFIER: ("$")? (["a"-"z","A"-"Z","_"]) (["a"-"z","A"-"Z","0"-"9","_"])* >
-|   < INTEGER_LITERAL: (["0"-"9"])+ >
+
+|   // Números
+    < INTEGER_LITERAL: (["0"-"9"])+ >
 |   < FLOAT_LITERAL: (["0"-"9"])+ "." (["0"-"9"])+ >
-|   < STRING_LITERAL: "\"" ( "\\" ["n","t","r","b","f","\\","\""] | ~["\"","\\"] )* "\"" >
+|   < HEX_LITERAL: "0x" (["0"-"9","a"-"f","A"-"F"])+ >
+|   < OCTAL_LITERAL: "0" (["0"-"7"])+ >
+
+|   // Cadenas con comillas dobles o simples
+    < STRING_LITERAL:
+        ("\"" ( "\\" ["n","t","r","b","f","\\","\"","'"] | ~["\"","\\"] )* "\"" )
+    |   ("'" ( "\\" ["n","t","r","b","f","\\","\"","'"] | ~["'","\\"] )* "'" )
+    >
+
+|   // Constantes mágicas estilo PHP
+    < MAGIC_CONST:
+        "__LINE__" | "__FILE__" | "__DIR__" | "__FUNCTION__" | "__CLASS__" | "__METHOD__"
+    >
 }
 
-// ------------------------------
-// OPERADORES Y SIMBOLOS
-// ------------------------------
+
+// ==========================================================
+// OPERADORES
+// ==========================================================
 TOKEN :
 {
+    // Aritméticos
     < PLUS: "+" >
 |   < MINUS: "-" >
 |   < MULT: "*" >
 |   < DIV: "/" >
 |   < MOD: "%" >
+|   < INC: "++" >
+|   < DEC: "--" >
+
+    // Asignación
 |   < ASSIGN: "=" >
+|   < ADD_ASSIGN: "+=" >
+|   < SUB_ASSIGN: "-=" >
+|   < MUL_ASSIGN: "*=" >
+|   < DIV_ASSIGN: "/=" >
+|   < MOD_ASSIGN: "%=" >
+
+    // Comparación
 |   < EQ: "==" >
 |   < NEQ: "!=" >
 |   < LT: "<" >
 |   < GT: ">" >
 |   < LE: "<=" >
 |   < GE: ">=" >
+
+    // Lógicos
 |   < AND: "&&" >
 |   < OR: "||" >
 |   < NOT: "!" >
-|   < LPAREN: "(" >
+
+    // Ternario y otros
+   // < TERNARY_Q: "?" >
+   // < TERNARY_C: ":" >
+   // < ARROW: "=>" >
+}
+
+
+// ==========================================================
+// SÍMBOLOS
+// ==========================================================
+TOKEN :
+{
+    < LPAREN: "(" >
 |   < RPAREN: ")" >
 |   < LBRACE: "{" >
 |   < RBRACE: "}" >
+|   < LBRACKET: "[" >
+|   < RBRACKET: "]" >
 |   < SEMICOLON: ";" >
 |   < COMMA: "," >
 |   < DOT: "." >
+|   < COLON: ":" >
+}
+
+
+// ==========================================================
+// ERRORES (opcional, útil para depuración léxica)
+// ==========================================================
+TOKEN :
+{
+    < ERROR: ~[] >
+}
+
+// ==========================================================
+// REGLAS SINTÁCTICAS (parser)
+// ==========================================================
+
+
+void Programa() :
+{}
+{
+    (Instruccion())* <EOF>
+}
+
+void Instruccion() :
+{}
+{
+    ( Declaracion()
+    | Asignacion()
+    | EstructuraControl()
+    // | LlamadaFuncion()
+    | SentenciaEcho()
+    | Bloque() )
+}
+
+void Declaracion() :
+{}
+{
+    ( <VAR> | <CONST> ) <IDENTIFIER> [ <ASSIGN> Expresion() ] <SEMICOLON>
+}
+
+void Asignacion() :
+{}
+{
+    <IDENTIFIER> <ASSIGN> Expresion() <SEMICOLON>
+}
+
+void SentenciaEcho() :
+{}
+{
+    <ECHO> Expresion() <SEMICOLON>
+}
+
+void EstructuraControl() :
+{}
+{
+    <IF> <LPAREN> Expresion() <RPAREN> Bloque() [ <ELSE> Bloque() ]
+}
+
+void Bloque() :
+{}
+{
+    <LBRACE> (Instruccion())* <RBRACE>
+}
+
+
+void Expresion() :
+{}
+{
+    Termino() ( ( <PLUS> | <MINUS> | <MULT> | <DIV> 
+                | <LT> | <GT> | <LE> | <GE> | <EQ> | <NEQ> 
+                | <AND> | <OR> ) Termino() )*
+}
+
+
+void Termino() :
+{}
+{
+    <IDENTIFIER>
+|   <INTEGER_LITERAL>
+|   <STRING_LITERAL>
+|   <TRUE>
+|   <FALSE>
+|   <NULL>
+|   <LPAREN> Expresion() <RPAREN>
 }

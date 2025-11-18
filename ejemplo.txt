@@ -1,0 +1,7 @@
+var x = 5;
+var y = 10;
+if (x < y) {
+    echo "x es menor";
+} else {
+    echo "x es mayor o igual";
+}
