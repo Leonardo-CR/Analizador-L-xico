@@ -2,37 +2,57 @@ PARSER_BEGIN(AnalizadorLexico)
 
 public class AnalizadorLexico {
     public static void main(String[] args) throws ParseException, java.io.FileNotFoundException {
-        System.out.println("=== Iniciando Análisis Sintáctico ===");
 
         java.io.InputStream input;
         if (args.length > 0) {
-            input = new java.io.FileInputStream(args[0]); // leer desde archivo
+            input = new java.io.FileInputStream(args[0]); 
         } else {
-            input = System.in; // leer desde consola
+            input = System.in;
         }
 
         AnalizadorLexico parser = new AnalizadorLexico(input);
-        parser.Programa(); // regla inicial del parser
+        
+        // MOSTRAR TOKENS
+        Token t;
+        while ((t = parser.getNextToken()).kind != AnalizadorLexicoConstants.EOF) {
+            System.out.println("TOKEN: " + tokenImage[t.kind] + " => " + t.image);
+        }
 
-        System.out.println("=== Análisis completado sin errores ===");
+        // REINICIAR PARA ANÁLISIS SINTÁCTICO
+        if (args.length > 0) {
+            input = new java.io.FileInputStream(args[0]);
+        } else {
+            input = System.in;
+        }
+
+        parser.ReInit(input);
+
+        parser.Program();
+        System.out.println("Análisis sintáctico correcto.");
     }
 }
 
 PARSER_END(AnalizadorLexico)
+
+
+
+// ==========================================================
+// Aqheran
+// ==========================================================
 
 // ==========================================================
 // ESPACIOS Y COMENTARIOS
 // ==========================================================
 SKIP :
 {
-    " " | "\t" | "\r" | "\n"
+      " " | "\t" | "\r" | "\n"
 }
 
 SKIP :
 {
+// Comentarios de 1 y n lineas
     < "//" (~["\n", "\r"])* ("\n" | "\r" | "\r\n") >
 |   < "/*" (~["*"])* ("*" (~["/"] (~["*"])* ) )* "*" "/" >
-|   < "#" (~["\n", "\r"])* ("\n" | "\r" | "\r\n") > // estilo PHP
 }
 
 
@@ -45,60 +65,60 @@ TOKEN :
 |   < ELSE: "else" >
 |   < WHILE: "while" >
 |   < FOR: "for" >
-|   < FUNCTION: "function" >
+|   < FUNCTION: "fn" >
 |   < RETURN: "return" >
-|   < ECHO: "echo" >
+
+// Imprimir mensajes
+|   < AQHE: "aqhe" >
 |   < TRUE: "true" >
 |   < FALSE: "false" >
 |   < NULL: "null" >
 |   < BREAK: "break" >
 |   < CONTINUE: "continue" >
+
+// Uso de switch
 |   < SWITCH: "switch" >
 |   < CASE: "case" >
-|   < DEFAULT_KW : "default" >
-|   < VAR: "var" >
-|   < CONST: "const" >
-|   < CLASS: "class" >
-|   < NEW: "new" >
-|   < THIS: "this" >
-|   < EXTENDS: "extends" >
-|   < PUBLIC: "public" >
-|   < PRIVATE: "private" >
-|   < PROTECTED: "protected" >
-|   < STATIC: "static" >
+|   < DEFAULT_KW: "default" >
+
+//Constantes
+|   < CONST_VAR: "#" (["a"-"z","A"-"Z","_"]) (["a"-"z","A"-"Z","0"-"9","_"])* >
 |   < TRY: "try" >
 |   < CATCH: "catch" >
 |   < FINALLY: "finally" >
-|   < THROW: "throw" >
-|   < INTERFACE: "interface" >
-|   < IMPLEMENTS: "implements" >
+
+// Tokens clave para Modularidad
+|   < MODULE: "module" >
+|   < EXPORT: "export" >
+|   < IMPORT: "import" >
+|   < FROM: "from" >
+|   < AS_KW: "as" >
 }
 
 
 // ==========================================================
-// IDENTIFICADORES Y LITERALES
+// IDENTIFICADORES Y LITERALES y VARIABLES
 // ==========================================================
+
 TOKEN :
 {
-    // Identificadores (permiten $ para estilo PHP)
-    < IDENTIFIER: ("$")? (["a"-"z","A"-"Z","_"]) (["a"-"z","A"-"Z","0"-"9","_"])* >
+    < VARIABLE: "@" (["a"-"z","A"-"Z","_"]) (["a"-"z","A"-"Z","0"-"9","_"])* >
+}
 
-|   // Números
-    < INTEGER_LITERAL: (["0"-"9"])+ >
+
+TOKEN :
+{
+    < IDENT: (["a"-"z","A"-"Z","_"]) (["a"-"z","A"-"Z","0"-"9","_"])* >
+
+|   < INTEGER_LITERAL: (["0"-"9"])+ >
 |   < FLOAT_LITERAL: (["0"-"9"])+ "." (["0"-"9"])+ >
 |   < HEX_LITERAL: "0x" (["0"-"9","a"-"f","A"-"F"])+ >
-|   < OCTAL_LITERAL: "0" (["0"-"7"])+ >
 
-|   // Cadenas con comillas dobles o simples
-    < STRING_LITERAL:
+|   < STRING_LITERAL:
         ("\"" ( "\\" ["n","t","r","b","f","\\","\"","'"] | ~["\"","\\"] )* "\"" )
-    |   ("'" ( "\\" ["n","t","r","b","f","\\","\"","'"] | ~["'","\\"] )* "'" )
+      | ("'" ( "\\" ["n","t","r","b","f","\\","\"","'"] | ~["'","\\"] )* "'" )
     >
 
-|   // Constantes mágicas estilo PHP
-    < MAGIC_CONST:
-        "__LINE__" | "__FILE__" | "__DIR__" | "__FUNCTION__" | "__CLASS__" | "__METHOD__"
-    >
 }
 
 
@@ -107,16 +127,12 @@ TOKEN :
 // ==========================================================
 TOKEN :
 {
-    // Aritméticos
     < PLUS: "+" >
 |   < MINUS: "-" >
 |   < MULT: "*" >
 |   < DIV: "/" >
 |   < MOD: "%" >
-|   < INC: "++" >
-|   < DEC: "--" >
 
-    // Asignación
 |   < ASSIGN: "=" >
 |   < ADD_ASSIGN: "+=" >
 |   < SUB_ASSIGN: "-=" >
@@ -124,7 +140,6 @@ TOKEN :
 |   < DIV_ASSIGN: "/=" >
 |   < MOD_ASSIGN: "%=" >
 
-    // Comparación
 |   < EQ: "==" >
 |   < NEQ: "!=" >
 |   < LT: "<" >
@@ -132,15 +147,12 @@ TOKEN :
 |   < LE: "<=" >
 |   < GE: ">=" >
 
-    // Lógicos
 |   < AND: "&&" >
 |   < OR: "||" >
 |   < NOT: "!" >
-
-    // Ternario y otros
-   // < TERNARY_Q: "?" >
-   // < TERNARY_C: ":" >
-   // < ARROW: "=>" >
+// Operador de alcance y operador flecha
+|   < NAMESPACE_OP: "::" >
+|   < ARROW: "->" >
 }
 
 
@@ -163,7 +175,14 @@ TOKEN :
 
 
 // ==========================================================
-// ERRORES (opcional, útil para depuración léxica)
+// Tokens que nos faltaron XD
+// ==========================================================
+
+TOKEN : { < DEC : "--" > }
+TOKEN : { < INC : "++" > }
+
+// ==========================================================
+// ERROR TOKEN
 // ==========================================================
 TOKEN :
 {
@@ -171,75 +190,268 @@ TOKEN :
 }
 
 // ==========================================================
-// REGLAS SINTÁCTICAS (parser)
+// PARSER Aqheran
 // ==========================================================
 
-
-void Programa() :
+// Programa completo
+void Program() :
 {}
 {
-    (Instruccion())* <EOF>
+    ( ModuleDecl()
+    | FunctionDecl()
+    | Statement()
+    )* <EOF>
 }
 
-void Instruccion() :
+// Modulos
+void ModuleDecl() :
 {}
 {
-    ( Declaracion()
-    | Asignacion()
-    | EstructuraControl()
-    // | LlamadaFuncion()
-    | SentenciaEcho()
-    | Bloque() )
+    <MODULE> <IDENT> <LBRACE> ModuleBody() <RBRACE>
 }
 
-void Declaracion() :
+void ModuleBody() :
 {}
 {
-    ( <VAR> | <CONST> ) <IDENTIFIER> [ <ASSIGN> Expresion() ] <SEMICOLON>
+    (ImportDecl() | ExportDecl() | FunctionDecl())*
 }
 
-void Asignacion() :
+void ImportDecl() :
 {}
 {
-    <IDENTIFIER> <ASSIGN> Expresion() <SEMICOLON>
+    <IMPORT> <IDENT> ( <AS_KW> <IDENT> )? ( <FROM> <STRING_LITERAL> )? <SEMICOLON>
 }
 
-void SentenciaEcho() :
+void ExportDecl() :
 {}
 {
-    <ECHO> Expresion() <SEMICOLON>
+    <EXPORT> ( FunctionDecl() | <IDENT> <SEMICOLON> )
 }
 
-void EstructuraControl() :
+//funciones
+
+void FunctionDecl() :
 {}
 {
-    <IF> <LPAREN> Expresion() <RPAREN> Bloque() [ <ELSE> Bloque() ]
+    <FUNCTION> <IDENT> <LPAREN> ParamList() <RPAREN> FunctionBody()
 }
 
-void Bloque() :
+void ParamList() :
 {}
 {
-    <LBRACE> (Instruccion())* <RBRACE>
+    [ <IDENT> ( <COMMA> <IDENT> )* ]
+}
+
+void FunctionBody() :
+{}
+{
+    ( <ARROW> Expression() <SEMICOLON> )
+  | ( <LBRACE> StatementList() <RBRACE> )
+}
+
+// Sentencias
+
+void StatementList() :
+{}
+{
+    (Statement())*
+}
+
+void PrintStatement() :
+{}
+{
+    <AQHE> <LPAREN> [ Expression() ] <RPAREN> <SEMICOLON>
+}
+
+void Statement() :
+{}
+{
+      IfStatement()
+    | WhileStatement()
+    | ForStatement()
+    | ReturnStatement()
+    | BreakStatement()
+    | ContinueStatement()
+    | SwitchStatement()
+    | TryCatchStatement()
+    | PrintStatement()
+    | Block()
+    | Expression() <SEMICOLON>
+}
+
+void Block() :
+{}
+{
+    <LBRACE> StatementList() <RBRACE>
+}
+
+// Control de Flujo
+
+void IfStatement() :
+{}
+{
+    <IF> <LPAREN> Expression() <RPAREN>
+    Statement()
+    (
+        LOOKAHEAD(<ELSE>)
+        <ELSE> Statement()
+    )?
 }
 
 
-void Expresion() :
+void WhileStatement() :
 {}
 {
-    Termino() ( ( <PLUS> | <MINUS> | <MULT> | <DIV> 
-                | <LT> | <GT> | <LE> | <GE> | <EQ> | <NEQ> 
-                | <AND> | <OR> ) Termino() )*
+    <WHILE> <LPAREN> Expression() <RPAREN> Statement()
+}
+
+void ForStatement() :
+{}
+{
+    <FOR> <LPAREN> [ Expression() ] <SEMICOLON> [ Expression() ] <SEMICOLON> [ Expression() ] <RPAREN> Statement()
+}
+
+void ReturnStatement() :
+{}
+{
+    <RETURN> [ Expression() ] <SEMICOLON>
+}
+
+void BreakStatement() :
+{}
+{
+    <BREAK> <SEMICOLON>
+}
+
+void ContinueStatement() :
+{}
+{
+    <CONTINUE> <SEMICOLON>
+}
+
+// Switch
+void SwitchStatement() :
+{}
+{
+    <SWITCH> <LPAREN> Expression() <RPAREN> <LBRACE> (CaseBlock())* <RBRACE>
+}
+
+void CaseBlock() :
+{}
+{
+      <CASE> Expression() <COLON> StatementList()
+    | <DEFAULT_KW> <COLON> StatementList()
+}
+
+// Try y Catch
+
+void TryCatchStatement() :
+{}
+{
+    <TRY> Block() <CATCH> <LPAREN> <IDENT> <RPAREN> Block() [ <FINALLY> Block() ]
+}
+
+// Expresiones
+
+void Expression() : {} { AssignmentExpression() }
+
+void AssignmentExpression() :
+{}
+{
+    LOOKAHEAD(2)
+    (
+        ( <IDENT> | <VARIABLE> )
+        ( <ASSIGN> | <ADD_ASSIGN> | <SUB_ASSIGN> | <MUL_ASSIGN> | <DIV_ASSIGN> | <MOD_ASSIGN> )
+        AssignmentExpression()
+    )
+  | OrExpression()
 }
 
 
-void Termino() :
+
+void OrExpression() :
 {}
 {
-    <IDENTIFIER>
-|   <INTEGER_LITERAL>
-|   <STRING_LITERAL>
-|   <TRUE>
-|   <FALSE>
-|   <NULL>
-|   <LPAREN> Expresion() <RPAREN>
+    AndExpression() ( <OR> AndExpression() )*
+}
+
+void AndExpression() :
+{}
+{
+    EqualityExpression() ( <AND> EqualityExpression() )*
+}
+
+void EqualityExpression() :
+{}
+{
+    RelationalExpression() ( ( <EQ> | <NEQ> ) RelationalExpression() )*
+}
+
+void RelationalExpression() :
+{}
+{
+    AddExpression() ( ( <LT> | <GT> | <LE> | <GE> ) AddExpression() )*
+}
+
+void AddExpression() :
+{}
+{
+    MultExpression() ( ( <PLUS> | <MINUS> ) MultExpression() )*
+}
+
+void MultExpression() :
+{}
+{
+    UnaryExpression() ( ( <MULT> | <DIV> | <MOD> ) UnaryExpression() )*
+}
+
+void UnaryExpression() :
+{}
+{
+      ( <INC> | <DEC> ) PrimaryExpression()
+    | PrimaryExpression() ( <INC> | <DEC> )?
+}
+
+
+// Primarios
+
+void PrimaryExpression() :
+{}
+{
+      Literal()
+    | <VARIABLE>
+    | <LPAREN> Expression() <RPAREN>
+    | AccessExpression()
+}
+
+
+void ArgList() :
+{}
+{
+    [ Expression() ( <COMMA> Expression() )* ]
+}
+
+void AccessExpression() :
+{}
+{
+    <IDENT>
+    (
+        <LPAREN> ArgList() <RPAREN>     // llamada
+      | <DOT> <IDENT>                  // acceso
+      | <LBRACKET> Expression() <RBRACKET>
+      | <NAMESPACE_OP> <IDENT>
+    )*
+}
+
+//literales
+void Literal() :
+{}
+{
+      <INTEGER_LITERAL>
+    | <FLOAT_LITERAL>
+    | <HEX_LITERAL>
+    | <STRING_LITERAL>
+    | <TRUE>
+    | <FALSE>
+    | <NULL>
 }

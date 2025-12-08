@@ -1,7 +1,49 @@
-var x = 5;
-var y = 10;
-if (x < y) {
-    echo "x es menor";
-} else {
-    echo "x es mayor o igual";
+fn suma(a, b) -> a + b;
+
+fn resta(a, b) -> a - b;
+
+fn mul(a,b)
+{
+    suma(a,b);
+    aqhe(a*b);
+}
+
+fn main() {
+    
+    @x = 10;
+    @y = 5;
+
+    if (@x > @y) {
+        aqhe("X es mayor");
+    } else {
+        aqhe("Y es mayor");
+    }
+
+    while (@x > 0) {
+        aqhe(@x);
+        @x--;
+    }
+
+    for (@i = 0; @i < 3; @i++) {
+        aqhe("Iteración");
+    }
+
+    switch (@y) {
+        case 1:
+            aqhe("Uno");
+        case 5:
+            aqhe("Cinco");
+        default:
+            aqhe("Otro");
+    }
+
+    try {
+        aqhe("Intentando...");
+    } catch (e) {
+        aqhe("Error");
+    } finally {
+        aqhe("Finalizado");
+    }
+
+    return suma(@x, @y);
 }
